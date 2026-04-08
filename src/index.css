@@ -1,0 +1,139 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400..900&family=Outfit:wght@400..900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Fonts - Premium Academic Selection */
+  --font-sans: "Inter", ui-sans-serif, system-ui;
+  --font-heading: "Outfit", var(--font-sans);
+
+  /* Colors - Vibrant & Elite Oranges */
+  --color-primary: hsl(25 95% 53%);
+  --color-primary-hover: hsl(25 95% 45%);
+  --color-primary-light: hsl(25 100% 96%);
+  --color-primary-dark: hsl(25 95% 35%);
+  --color-primary-glow: hsla(25, 95%, 53%, 0.4);
+
+  --color-secondary: hsl(220 30% 15%);
+  --color-accent: hsl(25 100% 50%);
+  
+  /* Mesh Gradient Tokens */
+  --mesh-1: hsla(25, 90%, 60%, 0.15);
+  --mesh-2: hsla(210, 80%, 50%, 0.1);
+  --mesh-3: hsla(280, 70%, 60%, 0.1);
+
+  /* Surface & Background - Sophisticated Neutrals */
+  --color-background: hsl(0 0% 98%);
+  --color-surface: #FFFFFF;
+  --color-bc: hsl(220 30% 12%);
+  --color-bc-muted: hsl(215 15% 45%);
+  --color-text-main: hsl(220 30% 12%);
+  --color-text-muted: hsl(215 15% 45%);
+  --color-border-color: rgba(226, 232, 240, 0.6);
+
+  /* Category Palette - Institutional & Refined */
+  --color-cat-cs: hsl(200 90% 45%);
+  --color-cat-math: hsl(340 80% 55%);
+  --color-cat-physics: hsl(260 70% 50%);
+  --color-cat-chem: hsl(150 70% 40%);
+
+  /* Border Radii - Progressive */
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2.25rem;
+  --radius-full: 9999px;
+
+  /* Shadows - Volumetric & Soft */
+  --shadow-glass: 
+    0 1px 3px 0 rgba(0, 0, 0, 0.02),
+    0 4px 6px -1px rgba(0, 0, 0, 0.03),
+    0 20px 40px -12px rgba(15, 23, 42, 0.08);
+  --shadow-premium: 
+    0 2px 5px 0 rgba(0, 0, 0, 0.01),
+    0 15px 35px -15px rgba(0, 0, 0, 0.05);
+  --shadow-feature: 
+    0 30px 60px -15px rgba(249, 115, 22, 0.2),
+    0 0 20px -5px rgba(249, 115, 22, 0.1);
+}
+
+@layer base {
+  body {
+    @apply antialiased font-sans text-text-main bg-background transition-colors duration-300;
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(25, 60%, 85%, 0.2) 0, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(210, 40%, 80%, 0.1) 0, transparent 50%);
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading font-black tracking-tight text-text-main;
+  }
+
+  ::selection {
+    @apply bg-primary/20 text-primary-dark;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/95 backdrop-blur-2xl border border-border-color shadow-glass rounded-[40px] transition-all duration-700 hover:shadow-feature hover:border-primary/20;
+  }
+
+  .glass-bento {
+    @apply bg-white/60 backdrop-blur-xl border border-white shadow-premium rounded-[32px] transition-all duration-500 hover:bg-white/80 hover:shadow-feature overflow-hidden;
+  }
+
+  .hover-glow {
+    @apply relative transition-all duration-500 after:absolute after:inset-0 after:rounded-[40px] after:bg-primary/20 after:opacity-0 hover:after:opacity-100 after:blur-2xl after:-z-10;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-bc via-bc to-primary/40;
+  }
+
+  .mesh-gradient {
+    background-color: #ffffff;
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(217, 100%, 97%, 1) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(210, 100%, 98%, 1) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(215, 100%, 97%, 1) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(212, 100%, 98%, 1) 0px, transparent 50%);
+  }
+
+  .admin-layout .mesh-gradient {
+    background-color: #0f172a;
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(222, 47%, 11%, 1) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(217, 33%, 17%, 1) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(222, 47%, 11%, 1) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(215, 25%, 27%, 1) 0px, transparent 50%);
+  }
+
+  .premium-btn {
+    @apply px-8 py-5 bg-primary text-white font-heading font-black uppercase tracking-[0.2em] text-[10px] rounded-2xl shadow-lg shadow-primary/20 hover:bg-primary-hover hover:scale-[1.03] active:scale-95 transition-all duration-500 flex items-center justify-center gap-4 overflow-hidden relative;
+  }
+
+  .premium-input {
+    @apply w-full px-8 py-6 bg-white border-2 border-zinc-100 rounded-3xl focus:ring-8 focus:ring-primary/5 focus:border-primary outline-none transition-all duration-500 shadow-sm font-sans font-bold text-text-main placeholder:text-zinc-500 text-lg;
+  }
+
+  .premium-label {
+    @apply text-[11px] font-black uppercase tracking-[0.3em] text-bc ml-1 block mb-3 opacity-80;
+  }
+
+  .badge-premium {
+    @apply px-5 py-2 bg-white/80 backdrop-blur-md text-primary font-black rounded-full text-[9px] uppercase tracking-[0.3em] border border-primary/10 shadow-sm transition-all hover:bg-primary hover:text-white hover:border-primary duration-500;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-background;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-200 border-4 border-background rounded-full hover:bg-gray-300 transition-colors;
+}
