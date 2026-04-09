@@ -23,7 +23,9 @@ const Navbar = ({ user = { role: 'guest' }, setUser }) => {
 
     useEffect(() => {
         let isSubscribed = true;
-        if (role !== 'guest') {
+        
+        // Only fetch if they have a role AND a valid token in memory/storage
+        if (role !== 'guest' && user?.token) {
             const fetchNotes = async () => {
                 try {
                     const response = await authFetch(`/api/notifications/role/${role}`);
@@ -34,20 +36,25 @@ const Navbar = ({ user = { role: 'guest' }, setUser }) => {
                         setNotifications(data);
                     } else if (response.status === 401 || response.status === 403) {
                         console.warn("Notification sync stopped due to auth status:", response.status);
-                        isSubscribed = false;
+                        isSubscribed = false; // Stop further calls for this instance
                     }
                 } catch (error) {
-                    console.error("Notification sync error:", error);
+                    if (isSubscribed) console.error("Notification sync failure:", error);
                 }
             };
+            
             fetchNotes();
-            const interval = setInterval(fetchNotes, 30000); // Sync every 30s
+            const interval = setInterval(() => {
+                if (isSubscribed) fetchNotes();
+                else clearInterval(interval);
+            }, 30000);
+
             return () => {
                 isSubscribed = false;
                 clearInterval(interval);
             };
         }
-    }, [role]);
+    }, [role, user?.token]);
 
     const handleLogout = () => {
         localStorage.removeItem('edu_user');

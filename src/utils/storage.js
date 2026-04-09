@@ -16,14 +16,21 @@ export const getAuthHeaders = (headers = {}) => {
 };
 
 export const authFetch = async (url, options = {}) => {
+    // Prevent calls to "undefined" or "null" endpoints commonly caused by JS variable interpolation
+    if (url.includes('/undefined') || url.includes('/null')) {
+        console.warn("Blocking API call to invalid endpoint:", url);
+        return { ok: false, status: 400, json: async () => ({}) };
+    }
+
     const headers = getAuthHeaders(options.headers || {});
     try {
         const response = await fetch(url, { ...options, headers });
         if (response.status === 401) {
             console.warn("Unauthorized access detected. Clearing session.");
-            localStorage.removeItem('edu_user');
-            // We don't force a redirect here to avoid breaking background sync, 
-            // but the components will react to the missing user.
+            const user = getStoredUser();
+            if (user.token) {
+                localStorage.removeItem('edu_user');
+            }
         }
         return response;
     } catch (error) {
@@ -32,9 +39,14 @@ export const authFetch = async (url, options = {}) => {
     }
 };
 
-const getUserId = () => {
-    const user = getStoredUser();
-    return user.id;
+export const getUserId = () => {
+    try {
+        const user = getStoredUser();
+        if (!user || !user.id || user.id === 'undefined' || user.id === 'null') return null;
+        return user.id;
+    } catch {
+        return null;
+    }
 };
 
 export const getDownloads = async () => {
@@ -44,7 +56,7 @@ export const getDownloads = async () => {
         const response = await authFetch(`/api/resources/${userId}/actions`);
         if (!response.ok) throw new Error('Failed to load download history');
         const data = await response.json();
-        return data.filter(a => (a.actionType || '').toUpperCase() === 'DOWNLOAD');
+        return Array.isArray(data) ? data.filter(a => (a.actionType || '').toUpperCase() === 'DOWNLOAD') : [];
     } catch (error) {
         console.error('Error fetching downloads:', error);
         return [];
@@ -54,6 +66,8 @@ export const getDownloads = async () => {
 export const addDownload = async (resource) => {
     const userId = getUserId();
     if (!userId) return { success: false, error: 'User not authenticated' };
+    if (!resource?.id || resource.id === 'undefined') return { success: false, error: 'Invalid asset ID' };
+
     try {
         const response = await authFetch('/api/resources/action', {
             method: 'POST',
@@ -80,7 +94,7 @@ export const getBookmarks = async () => {
         const response = await authFetch(`/api/resources/${userId}/actions`);
         if (!response.ok) throw new Error('Repository Offline');
         const data = await response.json();
-        return data.filter(a => (a.actionType || '').toUpperCase() === 'BOOKMARK');
+        return Array.isArray(data) ? data.filter(a => (a.actionType || '').toUpperCase() === 'BOOKMARK') : [];
     } catch (error) {
         console.error('Error fetching bookmarks:', error);
         return [];
@@ -90,6 +104,8 @@ export const getBookmarks = async () => {
 export const addBookmark = async (resource) => {
     const userId = getUserId();
     if (!userId) return { success: false, error: 'Identity verification failed' };
+    if (!resource?.id || resource.id === 'undefined') return { success: false, error: 'Invalid asset ID' };
+
     try {
         const response = await authFetch('/api/resources/action', {
             method: 'POST',
@@ -111,7 +127,7 @@ export const addBookmark = async (resource) => {
 
 export const removeBookmark = async (id) => {
     const userId = getUserId();
-    if (!userId) return { success: false, error: 'Identity verification failed' };
+    if (!userId || !id || id === 'undefined') return { success: false, error: 'Invalid identifiers' };
     try {
         const response = await authFetch(`/api/resources/action/${userId}/${id}/BOOKMARK`, {
             method: 'DELETE'
@@ -124,9 +140,10 @@ export const removeBookmark = async (id) => {
 };
 
 export const isBookmarked = async (id) => {
+    if (!id || id === 'undefined') return false;
     try {
         const bookmarks = await getBookmarks();
-        return bookmarks.some(b => b.resourceId === id);
+        return Array.isArray(bookmarks) && bookmarks.some(b => b.resourceId == id);
     } catch {
         return false;
     }
@@ -138,7 +155,8 @@ export const getFeedback = async () => {
     try {
         const response = await authFetch(`/api/feedback/user/${userId}`);
         if (!response.ok) return [];
-        return await response.json();
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
     } catch (error) {
         console.error('Error fetching feedback:', error);
         return [];
@@ -147,6 +165,7 @@ export const getFeedback = async () => {
 
 export const addFeedback = async (feedbackItem) => {
     const userId = getUserId();
+    if (!userId) return { success: false, error: 'Identity required' };
     try {
         const response = await authFetch('/api/feedback', {
             method: 'POST',
@@ -162,3 +181,4 @@ export const addFeedback = async (feedbackItem) => {
         return { success: false, error: error.message };
     }
 };
+

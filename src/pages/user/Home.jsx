@@ -219,8 +219,14 @@ const Home = ({ user }) => {
                                             alt="" 
                                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-90 group-hover:opacity-100" 
                                          />
+                                     ) : (res.type === 'Video' && res.youtubeUrl) ? (
+                                         <img 
+                                            src={`https://img.youtube.com/vi/${res.youtubeUrl.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/|live\/)([^#&?]*).*/)?.[2]}/hqdefault.jpg`}
+                                            alt="" 
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-90 group-hover:opacity-100" 
+                                         />
                                      ) : (
-                                         <span className="text-8xl group-hover:scale-125 group-hover:-rotate-12 transition-transform duration-700 opacity-80">{res.icon || (res.type === 'Video' ? '🎬' : '📄')}</span>
+                                         <span className="text-8xl group-hover:scale-125 group-hover:-rotate-12 transition-transform duration-700 opacity-80">{res.icon || ((res.type || '').toLowerCase() === 'video' ? '🎬' : '📄')}</span>
                                      )}
                                      <div className="absolute top-6 right-6 badge-premium py-1 group-hover:bg-primary group-hover:text-white transition-colors z-10">{res.type}</div>
                                 </div>

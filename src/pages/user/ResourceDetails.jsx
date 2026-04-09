@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Toast from '../../components/Toast';
 import { authFetch, isBookmarked as checkBookmarked, addBookmark, removeBookmark, addDownload } from '../../utils/storage';
+import { getYouTubeEmbedUrl } from '../../utils/youtube';
 
 const ResourceDetails = ({ user: activeUser }) => {
     const { id: _id } = useParams();
@@ -23,33 +24,32 @@ const ResourceDetails = ({ user: activeUser }) => {
             .join('/');
     }, []);
 
-    const getYouTubeEmbedUrl = (url) => {
-        if (!url) return null;
-        const playlistMatch = url.match(/[?&]list=([^#&?]+)/);
-        if (playlistMatch) return `https://www.youtube.com/embed/videoseries?list=${playlistMatch[1]}`;
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-        const match = url.match(regExp);
-        return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : null;
-    };
-
     useEffect(() => {
+        if (!_id || _id === 'undefined' || _id === 'null') {
+            setIsLoading(false);
+            setResource(null);
+            return;
+        }
+
         const loadDetails = async () => {
             setIsLoading(true);
             try {
                 const response = await fetch(`/api/resources/${_id}`);
-                if (!response.ok) throw new Error('Not Found');
+            if (response.status === 404) throw new Error('Resource Identity Expunged or Invalid');
+            if (!response.ok) throw new Error('Archive Node Unreachable: Repository Synchronization Failed');
                 const resData = await response.json();
                 setResource(resData);
                 
                 const feedbackRes = await fetch(`/api/feedback/resource/${_id}`);
                 if (feedbackRes.ok) setComments(await feedbackRes.json());
 
-                if (resData) {
+                if (resData && resData.id) {
                     const bookmarked = await checkBookmarked(resData.id);
                     setIsBookmarked(bookmarked);
                 }
             } catch (error) {
-                console.error("Fetch error:", error);
+                console.error("Scholastic recovery failure:", error);
+                setResource(null);
             } finally {
                 setIsLoading(false);
             }
@@ -76,7 +76,17 @@ const ResourceDetails = ({ user: activeUser }) => {
     };
 
     const handleDownload = async () => {
+        const isVideo = (resource.type || '').toLowerCase() === 'video';
+        
         if (!resource.resourcePath) {
+            if (isVideo && resource.youtubeUrl) {
+                showToast('This asset is a stream reference. No physical payload is present.', 'info');
+                const playerElement = document.getElementById('academic-player-interface');
+                if (playerElement) {
+                    playerElement.scrollIntoView({ behavior: 'smooth' });
+                }
+                return;
+            }
             showToast('Electronic payload unavailable for this asset.', 'error');
             return;
         }
@@ -90,13 +100,13 @@ const ResourceDetails = ({ user: activeUser }) => {
         link.click();
         document.body.removeChild(link);
 
-        showToast('Executing high-speed load...', 'success');
+        showToast('Executing high-speed payload transfer...', 'success');
 
         const result = await addDownload(resource);
         if (result.success) {
             setResource(prev => prev ? { ...prev, downloads: (prev.downloads || 0) + 1 } : prev);
         } else {
-            showToast(`Download started, but history sync failed: ${result.error}`, 'error');
+            showToast(`History sync failed: ${result.error}`, 'error');
         }
     };
 
@@ -247,16 +257,33 @@ const ResourceDetails = ({ user: activeUser }) => {
                             </div>
                         </div>
 
-                        <div className="aspect-video bg-zinc-950 flex items-center justify-center relative overflow-hidden">
-                            {resource.type === 'Video' ? (
+                        <div id="academic-player-interface" className="aspect-video bg-zinc-950 flex items-center justify-center relative overflow-hidden">
+                            {(resource.type || '').toLowerCase() === 'video' ? (
                                 resource.youtubeUrl ? (
-                                    <iframe
-                                        className="w-full h-full"
-                                        src={getYouTubeEmbedUrl(resource.youtubeUrl)}
-                                        title="Academic Series Content"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                        allowFullScreen
-                                    ></iframe>
+                                    <div className="w-full h-full relative">
+                                        <iframe
+                                            className="w-full h-full"
+                                            src={getYouTubeEmbedUrl(resource.youtubeUrl) ? (getYouTubeEmbedUrl(resource.youtubeUrl).includes('?') ? `${getYouTubeEmbedUrl(resource.youtubeUrl)}&autoplay=1` : `${getYouTubeEmbedUrl(resource.youtubeUrl)}?autoplay=1`) : ''}
+                                            title="Academic Series Content"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                        ></iframe>
+                                        {!getYouTubeEmbedUrl(resource.youtubeUrl) && (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/90 p-8 text-center text-white space-y-6">
+                                                <div className="text-5xl">⚠️</div>
+                                                <h3 className="text-xl font-black uppercase tracking-widest">Player Configuration Failure</h3>
+                                                <p className="text-sm opacity-60 max-w-md">The provided reference URL cannot be embedded within the institutional interface. Please use the direct link below.</p>
+                                                <a 
+                                                    href={resource.youtubeUrl} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    className="premium-btn !h-12 !px-8 text-[10px]"
+                                                >
+                                                    Open External Stream ↗
+                                                </a>
+                                            </div>
+                                        )}
+                                    </div>
                                 ) : resource.resourcePath ? (
                                     <video className="w-full h-full" controls preload="metadata">
                                         <source src={`/api/resources/files/${resource.resourcePath}`} type="video/mp4" />
@@ -264,7 +291,7 @@ const ResourceDetails = ({ user: activeUser }) => {
                                 ) : (
                                     <div className="p-20 text-center">
                                         <div className="w-24 h-24 bg-primary/10 rounded-[32px] flex items-center justify-center text-primary text-5xl mx-auto mb-8">📴</div>
-                                        <h3 className="text-2xl font-black text-white/40 uppercase tracking-widest">Content Stream Offline</h3>
+                                        <h3 className="text-2xl font-black text-white/40 uppercase tracking_widest">Content Stream Offline</h3>
                                     </div>
                                 )
                             ) : (
@@ -376,7 +403,7 @@ const ResourceDetails = ({ user: activeUser }) => {
                                                         </div>
                                                         <div>
                                                             <div className="text-sm font-black text-text-main truncate max-w-[150px]">{c.userEmail}</div>
-                                                            <div className="text-[8px] font-black uppercase tracking-widest text-primary/60">Scholarly Verified</div>
+                                                            <div className="text-[8px] font-black uppercase tracking_widest text-primary/60">Scholarly Verified</div>
                                                         </div>
                                                     </div>
                                                     <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-[10px] font-black border border-primary/20 shadow-sm">

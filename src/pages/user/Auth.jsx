@@ -19,6 +19,8 @@ const AuthCard = ({ mode, role, setRole, setUser }) => {
     const [errors, setErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
     const [loginFeedback, setLoginFeedback] = useState({ message: '', type: 'error' });
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [verificationCode, setVerificationCode] = useState('');
 
     const roles = [
         { id: 'Student', label: 'Scholar', icon: '👨‍🎓' },
@@ -66,6 +68,12 @@ const AuthCard = ({ mode, role, setRole, setUser }) => {
 
     const handleSubmit = async (e) => {
         if (e && e.preventDefault) e.preventDefault();
+        
+        if (isVerifying) {
+            handleVerifyEmail();
+            return;
+        }
+
         if (validateForm()) {
             setIsLoading(true);
             setLoginFeedback({ message: '', type: 'error' });
@@ -87,6 +95,16 @@ const AuthCard = ({ mode, role, setRole, setUser }) => {
                 });
 
                 if (response.ok) {
+                    if (mode === 'signup') {
+                        setIsVerifying(true);
+                        setLoginFeedback({ 
+                            message: 'Identity node initialized. Verification code dispatched to your institutional email.', 
+                            type: 'success' 
+                        });
+                        setIsLoading(false);
+                        return;
+                    }
+
                     const user = await response.json();
                     if (user.role === 'Faculty' && user.status === 'Pending') {
                         setLoginFeedback({ 
@@ -115,6 +133,70 @@ const AuthCard = ({ mode, role, setRole, setUser }) => {
             } finally {
                 setIsLoading(false);
             }
+        }
+    };
+
+    const handleVerifyEmail = async () => {
+        setIsLoading(true);
+        setLoginFeedback({ message: '', type: 'error' });
+        try {
+            const response = await fetch('/api/auth/verify-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: formData.email,
+                    code: verificationCode
+                })
+            });
+            if (response.ok) {
+                const user = await response.json();
+                if (user.status === 'Pending') {
+                    setLoginFeedback({ 
+                        message: 'Email verified. Your faculty application is now under administrative review.', 
+                        type: 'success' 
+                    });
+                    setIsVerifying(false);
+                    return;
+                }
+
+                localStorage.setItem('edu_user', JSON.stringify(user));
+                setUser(user);
+                
+                if (user.role === 'Admin') navigate('/admin/dashboard');
+                else if (user.role === 'Faculty') navigate('/admin/upload');
+                else navigate('/home');
+            } else {
+                const errorData = await response.json().catch(() => ({ message: 'Invalid or expired verification code.' }));
+                setLoginFeedback({ message: errorData.message || 'Invalid or expired verification code.', type: 'error' });
+            }
+        } catch (err) {
+            console.error('Verify error:', err);
+            setLoginFeedback({ message: 'Verification protocol failure.', type: 'error' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleResendCode = async () => {
+        setIsLoading(true);
+        setLoginFeedback({ message: '', type: 'error' });
+        try {
+            const response = await fetch('/api/auth/resend-verification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: formData.email })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setLoginFeedback({ message: data.message, type: 'success' });
+            } else {
+                setLoginFeedback({ message: data.message || 'Resend protocol rejected.', type: 'error' });
+            }
+        } catch (err) {
+            console.error('Resend error:', err);
+            setLoginFeedback({ message: 'Synchronization failure.', type: 'error' });
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -206,46 +288,106 @@ const AuthCard = ({ mode, role, setRole, setUser }) => {
                             </div>
                             
                             <h2 className="text-4xl font-heading font-black tracking-tight text-text-main mb-3">
-                                {mode === 'login' ? 'Welcome Back' : 'Join the Nexus'}
+                                {isVerifying ? 'Verify Identity' : mode === 'login' ? 'Welcome Back' : 'Join the Nexus'}
                             </h2>
                             <p className="text-text-muted text-sm font-bold flex items-center gap-2 uppercase tracking-wide">
-                                <span className="w-6 h-px bg-primary/40"></span> {mode === 'login' ? 'Synchronize your scholarly profile' : 'Initialize your institutional credentials'}
+                                <span className="w-6 h-px bg-primary/40"></span> {isVerifying ? 'Enter 6-digit code' : mode === 'login' ? 'Synchronize your scholarly profile' : 'Initialize your institutional credentials'}
                             </p>
                         </div>
 
                         <form className="space-y-6" onSubmit={handleSubmit}>
-                            {/* Role Selector */}
-                            <div className="space-y-4">
-                                <label className="premium-label !ml-0">Identity Protocol</label>
-                                <div className="grid grid-cols-3 gap-3">
-                                    {roles.map(r => (
-                                        <button
-                                            key={r.id}
-                                            type="button"
-                                            onClick={() => setRole(r.id)}
-                                            className={`flex flex-col items-center justify-center py-5 px-3 rounded-2xl border-2 transition-all duration-300 ${role === r.id ? 'bg-primary/5 border-primary shadow-glow scale-[1.02]' : 'bg-white border-zinc-100 hover:bg-zinc-50'}`}
-                                        >
-                                            <span className="text-2xl mb-2">{r.icon}</span>
-                                            <span className={`text-[10px] font-black uppercase tracking-widest ${role === r.id ? 'text-primary' : 'text-zinc-500'}`}>{r.label}</span>
-                                        </button>
-                                    ))}
+                            {!isVerifying && (
+                                <div className="space-y-4">
+                                    <label className="premium-label !ml-0">Identity Protocol</label>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        {roles.map(r => (
+                                            <button
+                                                key={r.id}
+                                                type="button"
+                                                onClick={() => setRole(r.id)}
+                                                className={`flex flex-col items-center justify-center py-5 px-3 rounded-2xl border-2 transition-all duration-300 ${role === r.id ? 'bg-primary/5 border-primary shadow-glow scale-[1.02]' : 'bg-white border-zinc-100 hover:bg-zinc-50'}`}
+                                            >
+                                                <span className="text-2xl mb-2">{r.icon}</span>
+                                                <span className={`text-[10px] font-black uppercase tracking-widest ${role === r.id ? 'text-primary' : 'text-zinc-500'}`}>{r.label}</span>
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             <AnimatePresence mode="wait">
                                 <motion.div
-                                    key={`${mode}-${role}`}
+                                    key={isVerifying ? 'verifying' : `${mode}-${role}`}
                                     initial={{ opacity: 0, x: 10 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -10 }}
                                     className="space-y-5"
                                 >
-                                    {mode === 'signup' && (
-                                        <div className="space-y-3">
-                                            <label className="premium-label">Full Academic Identity</label>
-                                            <input type="text" name="name" value={formData.name} onChange={handleChange} className={`premium-input ${errors.name ? 'border-red-500' : ''}`} placeholder="Scholarly Identity" />
+                                    {isVerifying ? (
+                                        <div className="space-y-8 py-4">
+                                            <div className="space-y-4 text-center">
+                                                <div className="inline-block p-4 bg-primary/10 rounded-3xl mb-2">
+                                                    <span className="text-3xl">📧</span>
+                                                </div>
+                                                <h3 className="text-2xl font-black text-text-main tracking-tight italic">Verify <span className="text-primary italic">Identity</span></h3>
+                                                <p className="text-[10px] text-text-muted font-black uppercase tracking-[0.2em] leading-relaxed max-w-[280px] mx-auto">
+                                                    We have dispatched a 6-digit protocol to: <br/>
+                                                    <span className="text-primary font-black mt-1 block">{formData.email}</span>
+                                                </p>
+                                            </div>
+
+                                            <div className="flex justify-center gap-2">
+                                                {/* Split input display for better scholarly aesthetic */}
+                                                <div className="relative group">
+                                                    <input 
+                                                        type="text" 
+                                                        maxLength="6"
+                                                        value={verificationCode}
+                                                        onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                                                        className="w-full max-w-[240px] text-center text-4xl font-black tracking-[0.6em] premium-input !py-8 bg-zinc-50 border-2 border-zinc-100 focus:border-primary/40 focus:bg-white transition-all shadow-feature-hover placeholder:opacity-20"
+                                                        placeholder="000000"
+                                                        autoFocus
+                                                    />
+                                                    <div className="absolute inset-x-0 -bottom-1 h-1 bg-primary/20 scale-x-0 group-focus-within:scale-x-100 transition-transform origin-center"></div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex flex-col gap-4">
+                                                <button 
+                                                    type="submit" 
+                                                    disabled={isLoading || verificationCode.length !== 6} 
+                                                    className="premium-btn w-full !h-16 shadow-feature"
+                                                >
+                                                    Authorize Deployment
+                                                </button>
+                                                
+                                                <div className="flex items-center justify-between px-2">
+                                                    <button 
+                                                        type="button" 
+                                                        onClick={handleResendCode}
+                                                        disabled={isLoading}
+                                                        className="text-[9px] font-black uppercase tracking-widest text-text-muted hover:text-primary transition-colors flex items-center gap-2"
+                                                    >
+                                                        <span className={isLoading ? 'animate-spin' : ''}>🔄</span> {isLoading ? 'Requesting...' : 'Redispatch code'}
+                                                    </button>
+                                                    <button 
+                                                        type="button" 
+                                                        onClick={() => setIsVerifying(false)}
+                                                        className="text-[9px] font-black uppercase tracking-widest text-primary hover:underline hover:scale-105 transition-all"
+                                                    >
+                                                        Back to registration
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
-                                    )}
+                                    ) : (
+                                        <>
+                                            {mode === 'signup' && (
+                                                <div className="space-y-3">
+                                                    <label className="premium-label">Full Academic Identity</label>
+                                                    <input type="text" name="name" value={formData.name} onChange={handleChange} className={`premium-input ${errors.name ? 'border-red-500' : ''}`} placeholder="Scholarly Identity" />
+                                                </div>
+                                            )}
 
                                     <div className="space-y-3">
                                         <label className="premium-label">Digital Credentials (Email)</label>
@@ -305,8 +447,10 @@ const AuthCard = ({ mode, role, setRole, setUser }) => {
                                                 {mode === 'login' ? 'Trust this terminal' : 'Institutional compliance'}
                                             </span>
                                         </label>
-                                        {mode === 'login' && <Link to="/forgot" className="text-[9px] font-black uppercase tracking-widest text-primary/70 hover:text-primary">Forgot Key?</Link>}
-                                    </div>
+                                            {mode === 'login' && <Link to="/forgot" className="text-[9px] font-black uppercase tracking-widest text-primary/70 hover:text-primary">Forgot Key?</Link>}
+                                        </div>
+                                        </>
+                                    )}
                                 </motion.div>
                             </AnimatePresence>
 
@@ -321,7 +465,7 @@ const AuthCard = ({ mode, role, setRole, setUser }) => {
 
                             <button type="submit" disabled={isLoading} className="premium-btn w-full !py-6 shadow-2xl group disabled:opacity-70">
                                 <span className="relative z-10">
-                                    {isLoading ? 'Synchronizing Node...' : (mode === 'login' ? `Initialize Authentication` : 'Launch Identity node')}
+                                    {isLoading ? 'Synchronizing Node...' : isVerifying ? 'Verify Credentials' : (mode === 'login' ? `Initialize Authentication` : 'Launch Identity node')}
                                 </span>
                                 {!isLoading && <span className="text-xl group-hover:translate-x-2 transition-transform">→</span>}
                             </button>

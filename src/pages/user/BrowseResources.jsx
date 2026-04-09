@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import Toast from '../../components/Toast';
 import { authFetch } from '../../utils/storage';
+import { getYouTubeThumbnail } from '../../utils/youtube';
 
 const FILTER_SUBJECTS = ['All', 'Computer Science', 'Mathematics', 'Physics', 'Chemistry', 'History', 'Web Dev'];
 const FILTER_DEPARTMENTS = ['All', 'Engineering', 'Science', 'Arts'];
@@ -105,7 +106,7 @@ const BrowseResources = ({ user, setUser }) => {
             (res.description || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchesSubject = filters.subject === 'All' || res.subject === filters.subject;
         const matchesDept = filters.department === 'All' || res.department === filters.department;
-        const matchesType = filters.type === 'All' || res.type === filters.type;
+        const matchesType = filters.type === 'All' || (res.type || '').toLowerCase() === filters.type.toLowerCase();
 
         return matchesSearch && matchesSubject && matchesDept && matchesType;
     }).sort((a, b) => {
@@ -143,7 +144,7 @@ const BrowseResources = ({ user, setUser }) => {
                                 </p>
                                 <h3 className="text-sm font-black text-bc italic opacity-80">{user?.joinedPin ? `Connected to ${user.joinedPin}` : 'Not Affiliated'}</h3>
                             </div>
-                            <div className="flex items-center gap-3 bg-zinc-50 border border-zinc-100 rounded-2xl p-1.5 focus-within:border-primary/30 transition-all p-3">
+                            <div className="flex items-center gap-3 bg-zinc-50 border border-zinc-100 rounded-2xl p-1.5 focus-within:border-primary/30 transition-all">
                                 <input 
                                     type="text" 
                                     maxLength={6} 
@@ -246,6 +247,12 @@ const BrowseResources = ({ user, setUser }) => {
                                 <div className={`${viewMode === 'grid' ? 'h-52 w-full' : 'h-full w-72 flex-shrink-0'} bg-zinc-950 relative overflow-hidden`}>
                                     {res.thumbnailPath ? (
                                         <img src={`/api/resources/files/${res.thumbnailPath}`} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700" alt="" />
+                                    ) : (res.type === 'Video' && res.youtubeUrl) ? (
+                                        <img 
+                                            src={getYouTubeThumbnail(res.youtubeUrl)}
+                                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700" 
+                                            alt="" 
+                                        />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center text-6xl opacity-30 select-none">{res.type === 'Video' ? '🎬' : '📄'}</div>
                                     )}

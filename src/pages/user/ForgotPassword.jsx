@@ -19,6 +19,7 @@ const ForgotPassword = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
+    const [formData, setFormData] = useState({ oldPassword: '' });
 
     useEffect(() => {
         if (urlToken && urlEmail) {
@@ -75,7 +76,12 @@ const ForgotPassword = () => {
             const response = await fetch('/api/auth/reset-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, token: otp, newPassword })
+                body: JSON.stringify({ 
+                    email, 
+                    token: otp, 
+                    newPassword,
+                    oldPassword: formData.oldPassword
+                })
             });
 
             if (response.ok) {
@@ -166,7 +172,7 @@ const ForgotPassword = () => {
                                 
                                 <button type="submit" disabled={isLoading} className="premium-btn w-full !py-5 !rounded-2xl shadow-2xl shadow-primary/30 group disabled:opacity-70 disabled:cursor-wait">
                                     <span className="relative z-10 uppercase tracking-[0.15em] text-xs font-black">
-                                        {isLoading ? 'Sending OTP...' : 'Dispatch Recovery Code'}
+                                        {isLoading ? 'Processing...' : 'Next'}
                                     </span>
                                 </button>
                             </motion.form>
@@ -194,7 +200,18 @@ const ForgotPassword = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-bc-muted ml-1">New Protocol</label>
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-bc-muted ml-1">Legacy Protocol (Old Password)</label>
+                                    <input 
+                                        type="password" 
+                                        value={formData.oldPassword || ''} 
+                                        onChange={(e) => setFormData({...formData, oldPassword: e.target.value})} 
+                                        className="premium-input !px-6 !py-4" 
+                                        placeholder="Optional if forgotten" 
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-bc-muted ml-1">New Protocol (New Password)</label>
                                     <input 
                                         type="password" 
                                         value={newPassword} 
@@ -206,7 +223,7 @@ const ForgotPassword = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-bc-muted ml-1">Confirm Protocol</label>
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-bc-muted ml-1">Verify Protocol (Confirm Password)</label>
                                     <input 
                                         type="password" 
                                         value={confirmPassword} 
@@ -219,7 +236,7 @@ const ForgotPassword = () => {
                                 
                                 <button type="submit" disabled={isLoading} className="premium-btn w-full !py-5 !rounded-2xl shadow-2xl shadow-primary/30 group disabled:opacity-70 disabled:cursor-wait">
                                     <span className="relative z-10 uppercase tracking-[0.15em] text-xs font-black">
-                                        {isLoading ? 'Verifying...' : 'Restore Identity'}
+                                        {isLoading ? 'Synchronizing...' : 'Meet'}
                                     </span>
                                 </button>
                             </motion.form>

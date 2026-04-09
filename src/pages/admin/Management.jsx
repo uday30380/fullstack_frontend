@@ -30,7 +30,11 @@ const EditResourceModal = ({ resource, onClose, onUpdate, user }) => {
         data.append('department', formData.department);
         data.append('type', formData.type);
         data.append('description', formData.description);
-        data.append('youtubeUrl', formData.youtubeUrl);
+        if (formData.type === 'Video' && formData.youtubeUrl) {
+            data.append('youtubeUrl', formData.youtubeUrl);
+        } else {
+            data.append('youtubeUrl', '');
+        }
         data.append('uploader', user?.email || user?.name || resource.uploader);
         
         if (user?.role === 'Faculty' && user?.facultyPin) {
@@ -912,7 +916,7 @@ export const UploadResource = ({ user }) => {
         data.append('description', formData.description);
         data.append('uploader', user?.email || user?.name || 'Faculty');
         
-        if (formData.type === 'Video' && formData.videoSource === 'youtube') {
+        if (formData.type === 'Video' && formData.youtubeUrl) {
             data.append('youtubeUrl', formData.youtubeUrl);
         }
         
