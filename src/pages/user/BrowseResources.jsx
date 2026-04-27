@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import Toast from '../../components/Toast';
-import { authFetch } from '../../utils/storage';
+import { authFetch, getApiUrl } from '../../utils/storage';
+
 import { getYouTubeThumbnail } from '../../utils/youtube';
 
 const FILTER_SUBJECTS = ['All', 'Computer Science', 'Mathematics', 'Physics', 'Chemistry', 'History', 'Web Dev'];
@@ -51,7 +52,8 @@ const BrowseResources = ({ user, setUser }) => {
                 ? (user?.facultyPin || '')
                 : ((!user?.joinedPin || user?.joinedPin === 'undefined') ? '' : user.joinedPin);
             const url = `/api/resources?role=${encodeURIComponent(role)}&joinedPin=${encodeURIComponent(activePin)}`;
-            const response = await fetch(url);
+            const response = await authFetch(url);
+
             if (!response.ok) throw new Error('Repository Synchronization Failed');
             const data = await response.json();
             // deduplicate by ID to ensure no "doubles" in the UI
@@ -246,7 +248,8 @@ const BrowseResources = ({ user, setUser }) => {
                             >
                                 <div className={`${viewMode === 'grid' ? 'h-52 w-full' : 'h-full w-72 flex-shrink-0'} bg-zinc-950 relative overflow-hidden`}>
                                     {res.thumbnailPath ? (
-                                        <img src={`/api/resources/files/${res.thumbnailPath}`} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700" alt="" />
+                                        <img src={getApiUrl(`/api/resources/files/${res.thumbnailPath}`)} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700" alt="" />
+
                                     ) : (res.type === 'Video' && res.youtubeUrl) ? (
                                         <img 
                                             src={getYouTubeThumbnail(res.youtubeUrl)}

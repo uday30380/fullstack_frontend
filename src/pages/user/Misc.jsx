@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Card from '../../components/Card';
 import RoleBadge from '../../components/RoleBadge';
 import { motion, AnimatePresence } from 'framer-motion';
-import { authFetch, getDownloads, getBookmarks, getFeedback } from '../../utils/storage';
+import { authFetch, getDownloads, getBookmarks, getFeedback, getApiUrl } from '../../utils/storage';
+
 import { Link } from 'react-router-dom';
 
 export const Profile = ({ user, setUser }) => {
@@ -20,8 +21,9 @@ export const Profile = ({ user, setUser }) => {
     const [syncPin, setSyncPin] = useState('');
     const [isSyncing, setIsSyncing] = useState(false);
     const avatarUrl = user.avatarPath 
-        ? `/api/resources/files/${user.avatarPath.split('/').map(segment => encodeURIComponent(segment)).join('/')}?v=${user.lastUpdated || 'initial'}`
+        ? getApiUrl(`/api/resources/files/${user.avatarPath.split('/').map(segment => encodeURIComponent(segment)).join('/')}?v=${user.lastUpdated || 'initial'}`)
         : null;
+
 
     const userInfo = {
         name: user.name || 'Scholar User',

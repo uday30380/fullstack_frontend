@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { authFetch } from '../utils/storage';
+import { authFetch, getApiUrl } from '../utils/storage';
+
 
 const Navbar = ({ user = { role: 'guest' }, setUser }) => {
     const role = user?.role || 'guest';
@@ -198,7 +199,7 @@ const Navbar = ({ user = { role: 'guest' }, setUser }) => {
                                             {user.avatarPath && user.avatarPath.length > 0 ? (
                                                 <img 
                                                     key={user.avatarPath + (user.lastUpdated || '')}
-                                                    src={`/api/resources/files/${user.avatarPath.startsWith('/') ? user.avatarPath.substring(1) : user.avatarPath}?v=${user.lastUpdated || 'initial'}`} 
+                                                    src={getApiUrl(`/api/resources/files/${user.avatarPath.startsWith('/') ? user.avatarPath.substring(1) : user.avatarPath}?v=${user.lastUpdated || 'initial'}`)} 
                                                     alt="" 
                                                     className="w-full h-full object-cover" 
                                                     onError={(e) => {

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
+import { authFetch } from '../../utils/storage';
+
 
 const AuthCard = ({ mode, role, setRole, setUser }) => {
     const navigate = useNavigate();
@@ -79,7 +81,8 @@ const AuthCard = ({ mode, role, setRole, setUser }) => {
             setLoginFeedback({ message: '', type: 'error' });
             const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
             try {
-                const response = await fetch(endpoint, {
+                const response = await authFetch(endpoint, {
+
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -140,7 +143,8 @@ const AuthCard = ({ mode, role, setRole, setUser }) => {
         setIsLoading(true);
         setLoginFeedback({ message: '', type: 'error' });
         try {
-            const response = await fetch('/api/auth/verify-email', {
+            const response = await authFetch('/api/auth/verify-email', {
+
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -181,7 +185,8 @@ const AuthCard = ({ mode, role, setRole, setUser }) => {
         setIsLoading(true);
         setLoginFeedback({ message: '', type: 'error' });
         try {
-            const response = await fetch('/api/auth/resend-verification', {
+            const response = await authFetch('/api/auth/resend-verification', {
+
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: formData.email })

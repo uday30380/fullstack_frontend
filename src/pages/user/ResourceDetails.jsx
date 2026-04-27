@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Toast from '../../components/Toast';
-import { authFetch, isBookmarked as checkBookmarked, addBookmark, removeBookmark, addDownload } from '../../utils/storage';
+import { authFetch, getApiUrl, isBookmarked as checkBookmarked, addBookmark, removeBookmark, addDownload } from '../../utils/storage';
+
 import { getYouTubeEmbedUrl } from '../../utils/youtube';
 
 const ResourceDetails = ({ user: activeUser }) => {
@@ -34,13 +35,15 @@ const ResourceDetails = ({ user: activeUser }) => {
         const loadDetails = async () => {
             setIsLoading(true);
             try {
-                const response = await fetch(`/api/resources/${_id}`);
+                const response = await authFetch(`/api/resources/${_id}`);
+
             if (response.status === 404) throw new Error('Resource Identity Expunged or Invalid');
             if (!response.ok) throw new Error('Archive Node Unreachable: Repository Synchronization Failed');
                 const resData = await response.json();
                 setResource(resData);
                 
-                const feedbackRes = await fetch(`/api/feedback/resource/${_id}`);
+                const feedbackRes = await authFetch(`/api/feedback/resource/${_id}`);
+
                 if (feedbackRes.ok) setComments(await feedbackRes.json());
 
                 if (resData && resData.id) {
@@ -92,7 +95,8 @@ const ResourceDetails = ({ user: activeUser }) => {
         }
 
         const encodedPath = encodeFilePath(resource.resourcePath);
-        const downloadUrl = `/api/resources/files/${encodedPath}?download=true&name=${encodeURIComponent(resource.title || 'resource')}`;
+        const downloadUrl = getApiUrl(`/api/resources/files/${encodedPath}?download=true&name=${encodeURIComponent(resource.title || 'resource')}`);
+
         const link = document.createElement('a');
         link.href = downloadUrl;
         link.download = resource.title || 'resource';
@@ -286,7 +290,8 @@ const ResourceDetails = ({ user: activeUser }) => {
                                     </div>
                                 ) : resource.resourcePath ? (
                                     <video className="w-full h-full" controls preload="metadata">
-                                        <source src={`/api/resources/files/${resource.resourcePath}`} type="video/mp4" />
+                                        <source src={getApiUrl(`/api/resources/files/${resource.resourcePath}`)} type="video/mp4" />
+
                                     </video>
                                 ) : (
                                     <div className="p-20 text-center">
@@ -298,7 +303,8 @@ const ResourceDetails = ({ user: activeUser }) => {
                                 <div className="w-full h-full bg-white flex flex-col items-center justify-center">
                                     {resource.thumbnailPath ? (
                                         <div className="relative w-full h-full group">
-                                        <img className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-all duration-700" src={`/api/resources/files/${encodeFilePath(resource.thumbnailPath)}`} alt={resource.title} />
+                                        <img className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-all duration-700" src={getApiUrl(`/api/resources/files/${encodeFilePath(resource.thumbnailPath)}`)} alt={resource.title} />
+
                                             <div className="absolute inset-0 bg-zinc-900/40 backdrop-blur-[2px] group-hover:backdrop-blur-0 transition-all duration-500 flex flex-col items-center justify-center p-12 text-center text-white">
                                                 <div className="p-12 glass-card border-white/30 shadow-2xl relative">
                                                     <div className="text-7xl mb-8">📄</div>
@@ -314,7 +320,8 @@ const ResourceDetails = ({ user: activeUser }) => {
                                             <p className="text-lg text-zinc-500 font-medium leading-relaxed italic">"{resource.description}"</p>
                                             <div className="h-px bg-zinc-100 w-24 mx-auto"></div>
                                             {resource.resourcePath && (
-                                                <a href={`/api/resources/files/${encodeFilePath(resource.resourcePath)}`} target="_blank" rel="noopener" className="btn-secondary px-10 py-5 inline-flex items-center gap-4 text-xs">
+                                                <a href={getApiUrl(`/api/resources/files/${encodeFilePath(resource.resourcePath)}`)} target="_blank" rel="noopener" className="btn-secondary px-10 py-5 inline-flex items-center gap-4 text-xs">
+
                                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                                                     Access Full Institutional Volume
                                                 </a>

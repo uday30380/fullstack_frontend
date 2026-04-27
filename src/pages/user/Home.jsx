@@ -13,7 +13,8 @@ const Home = ({ user }) => {
     async function fetchFeatured(userRole, pin) {
         try {
             const url = `/api/resources/featured?role=${userRole || 'guest'}&joinedPin=${pin || ''}`;
-            const response = await fetch(url);
+            const response = await authFetch(url);
+
             if (response.ok) {
                 const data = await response.json();
                 setFeaturedResources(data);

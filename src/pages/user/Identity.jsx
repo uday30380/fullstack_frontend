@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { authFetch } from '../../utils/storage';
+
 
 export const ForgotPassword = () => {
     const navigate = useNavigate();
@@ -19,7 +21,8 @@ export const ForgotPassword = () => {
         setStatus({ type: '', message: '' });
 
         try {
-            const response = await fetch('/api/auth/forgot-password', {
+            const response = await authFetch('/api/auth/forgot-password', {
+
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
@@ -45,7 +48,8 @@ export const ForgotPassword = () => {
         setStatus({ type: '', message: '' });
 
         try {
-            const response = await fetch('/api/auth/reset-password', {
+            const response = await authFetch('/api/auth/reset-password', {
+
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -199,7 +203,8 @@ export const ResetPassword = () => {
         setStatus({ type: '', message: '' });
 
         try {
-            const response = await fetch('/api/auth/reset-password', {
+            const response = await authFetch('/api/auth/reset-password', {
+
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, token: otp, newPassword: password })

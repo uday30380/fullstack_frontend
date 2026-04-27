@@ -1,4 +1,8 @@
+import { getApiUrl } from '../api/config';
+export { getApiUrl };
+
 // App API Utility for backend communication
+
 
 export const getStoredUser = () => {
     try {
@@ -23,8 +27,10 @@ export const authFetch = async (url, options = {}) => {
     }
 
     const headers = getAuthHeaders(options.headers || {});
+    const absoluteUrl = getApiUrl(url);
     try {
-        const response = await fetch(url, { ...options, headers });
+        const response = await fetch(absoluteUrl, { ...options, headers });
+
         if (response.status === 401) {
             console.warn("Unauthorized access detected. Clearing session.");
             const user = getStoredUser();
