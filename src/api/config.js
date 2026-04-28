@@ -15,7 +15,7 @@ export const getApiUrl = (path) => {
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
     
     // In development with Vite proxy, API_BASE_URL is empty, so it uses the proxy
-    // In production, API_BASE_URL will be the Railway backend URL
+    // In production, API_BASE_URL should be the Render backend URL
     const baseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
     return `${baseUrl}${normalizedPath}`;
 };

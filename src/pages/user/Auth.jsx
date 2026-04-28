@@ -69,6 +69,17 @@ const AuthCard = ({ mode, role, setRole, setUser }) => {
         return Object.keys(newErrors).length === 0;
     };
 
+    const readErrorMessage = async (response, fallback) => {
+        const text = await response.text();
+        if (!text) return fallback;
+        try {
+            const data = JSON.parse(text);
+            return data.message || fallback;
+        } catch {
+            return text;
+        }
+    };
+
     const handleSubmit = async (e) => {
         if (e && e.preventDefault) e.preventDefault();
         
@@ -99,22 +110,22 @@ const AuthCard = ({ mode, role, setRole, setUser }) => {
                 });
 
                 if (response.ok) {
-                    if (mode === 'signup') {
-                        setIsVerifying(true);
-                        setLoginFeedback({ 
-                            message: 'Identity node initialized. Verification code dispatched to your institutional email.', 
-                            type: 'success' 
-                        });
-                        setIsLoading(false);
-                        return;
-                    }
-
                     const user = await response.json();
                     if (user.role === 'Faculty' && user.status === 'Pending') {
                         setLoginFeedback({ 
                             message: 'Institutional Application Logged. Your scholarly credentials are now under administrative review.', 
                             type: 'success' 
                         });
+                        return;
+                    }
+
+                    if (mode === 'signup' && !user.token) {
+                        setIsVerifying(true);
+                        setLoginFeedback({
+                            message: user.message || 'Identity node initialized. Complete verification to continue.',
+                            type: 'success'
+                        });
+                        setIsLoading(false);
                         return;
                     }
 
@@ -125,7 +136,7 @@ const AuthCard = ({ mode, role, setRole, setUser }) => {
                     else if (user.role === 'Faculty') navigate('/admin/upload');
                     else navigate('/home');
                 } else {
-                    const errorMsg = await response.text();
+                    const errorMsg = await readErrorMessage(response, 'Authentication Protocol Rejected');
                     setLoginFeedback({ message: errorMsg || 'Authentication Protocol Rejected', type: 'error' });
                 }
             } catch (err) {

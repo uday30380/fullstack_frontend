@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Toast from '../../components/Toast';
-import { authFetch, getApiUrl, isBookmarked as checkBookmarked, addBookmark, removeBookmark, addDownload } from '../../utils/storage';
+import { authFetch, getApiUrl, getAuthHeaders, isBookmarked as checkBookmarked, addBookmark, removeBookmark, addDownload } from '../../utils/storage';
 
 import { getYouTubeEmbedUrl } from '../../utils/youtube';
 
@@ -94,17 +94,34 @@ const ResourceDetails = ({ user: activeUser }) => {
             return;
         }
 
-        const encodedPath = encodeFilePath(resource.resourcePath);
-        const downloadUrl = getApiUrl(`/api/resources/files/${encodedPath}?download=true&name=${encodeURIComponent(resource.title || 'resource')}`);
+        const downloadUrl = getApiUrl(`/api/resources/${resource.id}/download`);
 
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = resource.title || 'resource';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        try {
+            const response = await fetch(downloadUrl, {
+                headers: getAuthHeaders()
+            });
 
-        showToast('Executing high-speed payload transfer...', 'success');
+            if (!response.ok) {
+                showToast('Download failed because the file is missing on the server. Re-upload the resource file from the admin panel.', 'error');
+                return;
+            }
+
+            const blob = await response.blob();
+            const objectUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = objectUrl;
+            link.download = getDownloadName(response, resource.title || 'resource');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(objectUrl);
+
+            showToast('Executing high-speed payload transfer...', 'success');
+        } catch (error) {
+            console.error('Download failed:', error);
+            showToast('Download failed because the backend is unreachable.', 'error');
+            return;
+        }
 
         const result = await addDownload(resource);
         if (result.success) {
@@ -112,6 +129,12 @@ const ResourceDetails = ({ user: activeUser }) => {
         } else {
             showToast(`History sync failed: ${result.error}`, 'error');
         }
+    };
+
+    const getDownloadName = (response, fallback) => {
+        const header = response.headers.get('Content-Disposition') || '';
+        const match = header.match(/filename="([^"]+)"/i);
+        return match ? match[1] : fallback;
     };
 
     const handleReviewSubmit = async () => {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { authFetch } from '../../utils/storage';
+import { authFetch, getApiUrl } from '../../utils/storage';
 
 const Home = ({ user }) => {
     const role = user.role || 'guest';
@@ -216,7 +216,7 @@ const Home = ({ user }) => {
                                      <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent"></div>
                                      {res.thumbnailPath ? (
                                          <img 
-                                            src={`/api/resources/files/${res.thumbnailPath}`} 
+                                            src={getApiUrl(`/api/resources/files/${res.thumbnailPath}`)}
                                             alt="" 
                                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-90 group-hover:opacity-100" 
                                          />
