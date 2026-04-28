@@ -45,11 +45,12 @@ const AuthCard = ({ mode, role, setRole, setUser }) => {
         if (!formData.email) newErrors.email = 'Required';
         if (!formData.password) newErrors.password = 'Required';
 
-        if (role === 'Admin') {
-            if (!formData.secretCode) newErrors.secretCode = 'Required';
-        }
-
+        // For login mode, role tabs are not shown — secret code is always optional
+        // For signup mode, role-based validation applies
         if (mode === 'signup') {
+            if (role === 'Admin') {
+                if (!formData.secretCode) newErrors.secretCode = 'Required';
+            }
             if (!formData.name) newErrors.name = 'Required';
             if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Mismatch';
             if (!formData.terms) newErrors.terms = 'Required';
@@ -301,7 +302,8 @@ const AuthCard = ({ mode, role, setRole, setUser }) => {
                         </div>
 
                         <form className="space-y-6" onSubmit={handleSubmit}>
-                            {!isVerifying && (
+                            {/* Role tabs: only shown during SIGNUP, not login */}
+                            {!isVerifying && mode === 'signup' && (
                                 <div className="space-y-4">
                                     <label className="premium-label !ml-0">Identity Protocol</label>
                                     <div className="grid grid-cols-3 gap-3">
@@ -435,10 +437,14 @@ const AuthCard = ({ mode, role, setRole, setUser }) => {
                                         </div>
                                     )}
 
-                                    {role === 'Admin' && (
+                                    {/* For login: always show secret code field (admin needs it, others leave blank) */}
+                                    {/* For signup: only show if Admin role is selected */}
+                                    {(mode === 'login' || role === 'Admin') && (
                                         <div className="p-6 rounded-3xl bg-secondary/5 border-2 border-dashed border-primary/20">
-                                            <label className="text-[9px] font-black uppercase tracking-widest text-primary mb-2 block italic">Architect Secret Directive</label>
-                                            <input type="password" name="secretCode" value={formData.secretCode} onChange={handleChange} className="w-full bg-transparent border-0 focus:ring-0 outline-none text-text-main font-black text-xl tracking-widest" placeholder="CORE-SECRET" />
+                                            <label className="text-[9px] font-black uppercase tracking-widest text-primary mb-2 block italic">
+                                                {mode === 'login' ? '🛡️ Admin Secret Code (leave blank if not admin)' : 'Architect Secret Directive'}
+                                            </label>
+                                            <input type="password" name="secretCode" value={formData.secretCode} onChange={handleChange} className="w-full bg-transparent border-0 focus:ring-0 outline-none text-text-main font-black text-xl tracking-widest" placeholder={mode === 'login' ? 'ADMIN2026 (admins only)' : 'CORE-SECRET'} />
                                         </div>
                                     )}
 
