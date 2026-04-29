@@ -111,14 +111,6 @@ const AuthCard = ({ mode, role, setRole, setUser }) => {
 
                 if (response.ok) {
                     const user = await response.json();
-                    if (user.role === 'Faculty' && user.status === 'Pending') {
-                        setLoginFeedback({ 
-                            message: 'Institutional Application Logged. Your scholarly credentials are now under administrative review.', 
-                            type: 'success' 
-                        });
-                        return;
-                    }
-
                     if (mode === 'signup' && !user.token) {
                         setIsVerifying(true);
                         setLoginFeedback({
@@ -126,6 +118,14 @@ const AuthCard = ({ mode, role, setRole, setUser }) => {
                             type: 'success'
                         });
                         setIsLoading(false);
+                        return;
+                    }
+
+                    if (user.role === 'Faculty' && user.status === 'Pending') {
+                        setLoginFeedback({ 
+                            message: 'Institutional Application Logged. Your scholarly credentials are now under administrative review.', 
+                            type: 'success' 
+                        });
                         return;
                     }
 
@@ -448,14 +448,13 @@ const AuthCard = ({ mode, role, setRole, setUser }) => {
                                         </div>
                                     )}
 
-                                    {/* For login: always show secret code field (admin needs it, others leave blank) */}
                                     {/* For signup: only show if Admin role is selected */}
-                                    {(mode === 'login' || role === 'Admin') && (
+                                    {mode === 'signup' && role === 'Admin' && (
                                         <div className="p-6 rounded-3xl bg-secondary/5 border-2 border-dashed border-primary/20">
                                             <label className="text-[9px] font-black uppercase tracking-widest text-primary mb-2 block italic">
-                                                {mode === 'login' ? '🛡️ Admin Secret Code (leave blank if not admin)' : 'Architect Secret Directive'}
+                                                Architect Secret Directive
                                             </label>
-                                            <input type="password" name="secretCode" value={formData.secretCode} onChange={handleChange} className="w-full bg-transparent border-0 focus:ring-0 outline-none text-text-main font-black text-xl tracking-widest" placeholder={mode === 'login' ? 'ADMIN2026 (admins only)' : 'CORE-SECRET'} />
+                                            <input type="password" name="secretCode" value={formData.secretCode} onChange={handleChange} className="w-full bg-transparent border-0 focus:ring-0 outline-none text-text-main font-black text-xl tracking-widest" placeholder="CORE-SECRET" />
                                         </div>
                                     )}
 
