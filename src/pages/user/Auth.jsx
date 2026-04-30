@@ -111,7 +111,7 @@ const AuthCard = ({ mode, role, setRole, setUser }) => {
 
                 if (response.ok) {
                     const user = await response.json();
-                    if (mode === 'signup' && !user.token) {
+                    if (!user.token) {
                         setIsVerifying(true);
                         setLoginFeedback({
                             message: user.message || 'Identity node initialized. Complete verification to continue.',
